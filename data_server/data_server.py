@@ -10,7 +10,7 @@ from channels.canbus import Canbus
 
 class DataServer():
     def __init__(self, can_channel='can0') -> None:
-        self.server = Flask(__name__)
+        # self.server = Flask(__name__)
         self.canbus = Canbus(can_channel)
         self.devices_dict = {}
         self.device_wheels_key = "wheel_sensors"
