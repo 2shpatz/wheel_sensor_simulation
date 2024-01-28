@@ -3,7 +3,7 @@ import can
 
 
 class Canbus():
-    def __init__(self, channel='can0') -> None:
+    def __init__(self, channel='vcan0') -> None:
         self.channel = channel
         # self.arbitration_id = arbitration_id
         self.bus = can.interface.Bus(channel=self.channel, bustype='socketcan')
@@ -11,7 +11,11 @@ class Canbus():
     def send_message(self, arbitration_id, payload):
         # send encoded message
         message = can.Message(arbitration_id, data=payload, is_extended_id=False)
-        self.bus.send(message)
+        try:
+            self.bus.send(message)
+            logging.debug(f"Message sent on {self.bus.channel_info}")
+        except can.CanError:
+            logging.error("Message NOT sent")
 
     def receive_message(self):
         # receive encoded message
@@ -20,10 +24,11 @@ class Canbus():
 
     def close(self):
         self.bus.shutdown()
+        
 
     def send_data(self, arbitration_id, data):
-        # encode data and send
-        payload = [(string.encode('utf-8')) for string in data]
+        bytes_data = [string.encode('utf-8') for string in data]
+        payload = [int.from_bytes(bytes, byteorder='little') for bytes in bytes_data]
         self.send_message(arbitration_id, payload)
 
     def receive_data(self) -> (tuple[int, list] | None):
