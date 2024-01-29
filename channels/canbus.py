@@ -1,5 +1,6 @@
 import logging
 import can
+import asyncio
 
 
 class Canbus():
