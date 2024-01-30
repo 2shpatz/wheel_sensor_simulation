@@ -6,7 +6,6 @@ import asyncio
 class Canbus():
     def __init__(self, channel='vcan0') -> None:
         self.channel = channel
-        # self.arbitration_id = arbitration_id
         self.bus = can.interface.Bus(channel=self.channel, bustype='socketcan')
 
     def send_message(self, arbitration_id, payload):
@@ -18,7 +17,7 @@ class Canbus():
         except can.CanError:
             logging.error("Message NOT sent")
 
-    def receive_message(self):
+    async def receive_message(self):
         # receive encoded message
         message = self.bus.recv()
         return message

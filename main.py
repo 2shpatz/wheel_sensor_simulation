@@ -10,15 +10,9 @@ app = Flask(__name__)
 async def main():
     wheel_sensor.simulate_sensors()
     data_server = DataServer()
-
-    @app.route('/wheel/status', methods=['GET'])
-    async def get_data():
-        # Asynchronously fetch data from the data server
-        data = await data_server.get_all_sensors()
-        return jsonify(data)
-    loop = asyncio.get_event_loop()
-    
-    app.run(debug=True, port=5001)
+    task = asyncio.create_task(data_server.start_listen_to_data())
+    data_server.start_api_server()
+    await task
         
 if __name__ == '__main__':
     asyncio.run(main())

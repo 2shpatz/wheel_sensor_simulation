@@ -37,7 +37,6 @@ class WheelSensor:
 
     def set_wheel_state(self, wheel_state):
         self.wheel_state = wheel_state
-        # logging.warn(f"Wheel state set to: {wheel_state}")
 
     def run_wheel_simulaton_process(self):
         self.process = Process(target=self._simulate_wheel_states, args=())
