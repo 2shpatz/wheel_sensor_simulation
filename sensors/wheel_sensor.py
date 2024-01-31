@@ -39,29 +39,36 @@ class WheelSensor:
         self.wheel_state = wheel_state
 
     def run_wheel_simulaton_process(self):
-        self.process = Process(target=self._simulate_wheel_states, args=())
-        self.process.daemon = True
-        self.process.start()
+        try:
+            self.process = Process(target=self._simulate_wheel_states, args=())
+            self.process.daemon = True
+            self.process.start()
+        except KeyboardInterrupt:
+            self.terminate_process()
+            logging.warning("simulation process was terminated by the user")
     
     def terminate_process(self):
         self.process.terminate()
 
 
     def _simulate_wheel_states(self):
-        pressure_values = _read_file_pressure_values()
-        while True:
-            for new_wheel_pressure in pressure_values:
-                self.set_wheel_state(new_wheel_pressure)
+        try:
+            pressure_values = _read_file_pressure_values()
+            while True:
+                for new_wheel_pressure in pressure_values:
+                    self.set_wheel_state(new_wheel_pressure)
 
-                data = [
-                    self.group_id,
-                    self.sensor_id,
-                    self.wheel_position,
-                    self.wheel_state,
-                ]
+                    data = [
+                        self.group_id,
+                        self.sensor_id,
+                        self.wheel_position,
+                        self.wheel_state,
+                    ]
 
-                self.canbus.send_message(arbitration_id=self.sensor_id, payload=data)
-                time.sleep(1)
+                    self.canbus.send_message(arbitration_id=self.sensor_id, payload=data)
+        except KeyboardInterrupt:
+            self.canbus.close()
+            raise
 
 def _read_file_pressure_values() -> list[str]:
     with open(pressures_file, 'r') as file:
@@ -83,11 +90,7 @@ def simulate_sensors():
     try:
         for sensor in sensors:
             sensor.run_wheel_simulaton_process()
-    except KeyboardInterrupt:
-        for sensor in sensors:
-            sensor.canbus.close()
-            sensor.terminate_process()
-            
+
     except Exception as err:
         logging.error("Unexpected %s, %s", err, type(err))
         raise

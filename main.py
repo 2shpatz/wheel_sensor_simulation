@@ -1,18 +1,18 @@
-from flask import Flask, jsonify
 
-import time
+import logging
 import sensors.wheel_sensor as wheel_sensor
-from data_server.data_server import DataServer
+from data_server.data_server import DataApi
 import asyncio
 
-app = Flask(__name__)
 
 async def main():
     wheel_sensor.simulate_sensors()
-    data_server = DataServer()
-    task = asyncio.create_task(data_server.start_listen_to_data())
-    data_server.start_api_server()
-    await task
+    data_server = DataApi()
+    try:
+        await data_server.start_server()
+    except (KeyboardInterrupt, asyncio.exceptions.CancelledError) as err:
+        logging.warning("data_server was terminated by the user: %s", err)
+
         
 if __name__ == '__main__':
     asyncio.run(main())

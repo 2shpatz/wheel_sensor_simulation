@@ -18,15 +18,10 @@ def _find_enum_name(enum_type, value):
 
 class DataServer():
     def __init__(self, can_channel='vcan0') -> None:
-        self.server = Flask(__name__)
         self.canbus = Canbus(can_channel)
         self.devices_dict = {}
-        self.lock = asyncio.Lock()
-        self.api = DataApi(self)
 
-        
-
-    async def get_all_sensors(self):
+    def get_devices_dict(self):
         return self.devices_dict
 
     def get_sensor_data(self, device_id, sensor_id):
@@ -45,7 +40,7 @@ class DataServer():
             device_name = _find_enum_name(DevicesIds, device_id)
             sensor_name= _find_enum_name(SensorsIds, sensor_id)
             wheel_position = _find_enum_name(WheelPossition, wheel_position)
-            logging.debug("message.data", message.data)
+            logging.debug(message.data)
 
             if device_name in self.devices_dict:
                 if sensor_name in self.devices_dict[device_name]:
@@ -63,42 +58,40 @@ class DataServer():
             while True:
                 message = await self.canbus.receive_message()            
                 await self.update_wheel_sensors(message)
-                await asyncio.sleep(3)
+                await asyncio.sleep(0)
         except Exception as err:
             logging.error("Unexpected %s, %s", err, type(err))
             raise
-
-    def start_api_server(self):
-        self.api.start_server()
         
         
 
 
-class DataApi():
-    def __init__(self, data_server: DataServer) -> None:
+class DataApi(DataServer):
+    def __init__(self) -> None:
+        super().__init__()
         self.app = Flask(__name__)
-        self.data_server = data_server
         
-        
-   
+    def get_all_sensors(self):
+        return jsonify(self.get_devices_dict())
     
     def add_url_rules(self):
         
-        self.app.add_url_rule('/wheel/status', 'get_single_data', self.data_server.get_all_sensors)
+        self.app.add_url_rule('/wheel/status', 'get_single_data', self.get_all_sensors)
 
     def run_app(self):
         logging.info("starting api server")
         self.add_url_rules()
-        self.app.run(debug=False, port=5001)
+        self.app.run(debug=False, port=5002)
 
-    def start_server(self):
-
-        flask_thread = threading.Thread(target=self.run_app)
-        flask_thread.start()
-
-
+    async def start_server(self):
         
-        
+        try:
+            task = asyncio.create_task(self.start_listen_to_data())
+            app_thread = threading.Thread(target=self.run_app)
+            app_thread.start()
+            await task
+        finally:
+            app_thread.join()
 
 if __name__ == '__main__':
     pass
