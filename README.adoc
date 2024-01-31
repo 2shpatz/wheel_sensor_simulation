@@ -1,3 +1,3 @@
 = Wheel Sensor Simulation
 
-image::main_design.drawio.png[format=svg,opts=inline]
+image::docs/main_design.png[format=svg,opts=inline]
