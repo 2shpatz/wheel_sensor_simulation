@@ -38,7 +38,7 @@ class WheelSensor:
     def set_wheel_state(self, wheel_state):
         self.wheel_state = wheel_state
 
-    def run_wheel_simulaton_process(self):
+    def run_wheel_simulation_process(self):
         try:
             self.process = Process(target=self._simulate_wheel_states, args=())
             self.process.daemon = True
@@ -89,7 +89,7 @@ def simulate_sensors():
     sensors = [wheel_sens1, wheel_sens2, wheel_sens3, wheel_sens4]
     try:
         for sensor in sensors:
-            sensor.run_wheel_simulaton_process()
+            sensor.run_wheel_simulation_process()
 
     except Exception as err:
         logging.error("Unexpected %s, %s", err, type(err))

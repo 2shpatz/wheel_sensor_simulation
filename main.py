@@ -12,11 +12,6 @@ async def main():
         await data_server.start_server()
     except (KeyboardInterrupt, asyncio.exceptions.CancelledError) as err:
         logging.warning("data_server was terminated by the user: %s", err)
-
         
 if __name__ == '__main__':
     asyncio.run(main())
-
-
-   
-# TBD protobuf, configuration file, 
