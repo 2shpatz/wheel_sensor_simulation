@@ -1,7 +1,7 @@
 import logging
 
 from flask import Flask, jsonify
-from sensors.wheel_sensor import WheelPossition, SensorsIds, DevicesIds
+from sensors.wheel_sensor import WheelPosition, SensorsIds, DevicesIds
 from channels.canbus import Canbus
 import threading
 import asyncio
@@ -9,12 +9,11 @@ import asyncio
 logging.basicConfig(level=logging.INFO)
 
 def _find_enum_name(enum_type, value):
+    # translates the number back to its Enum name (replace the need of protobuf)
     for enum_member in enum_type:
         if enum_member.value == value:
             return enum_member.name
     return None
-
-
 
 class DataServer():
     def __init__(self, can_channel='vcan0') -> None:
@@ -25,6 +24,7 @@ class DataServer():
         return self.devices_dict
 
     def get_sensor_data(self, device_id, sensor_id):
+        # retrieves one sensor data
         sensor_data = None
         for _, value in self.devices_dict[device_id].items():
             if isinstance(value, dict) and sensor_id in value:
@@ -34,12 +34,13 @@ class DataServer():
         return sensor_data
 
     async def update_wheel_sensors(self, message):
+        # gats sensor data and updates the devices_dict
         try:
             
             device_id, sensor_id, wheel_position, wheel_pressure = message.data
             device_name = _find_enum_name(DevicesIds, device_id)
             sensor_name= _find_enum_name(SensorsIds, sensor_id)
-            wheel_position = _find_enum_name(WheelPossition, wheel_position)
+            wheel_position = _find_enum_name(WheelPosition, wheel_position)
             logging.debug(message.data)
 
             if device_name in self.devices_dict:
@@ -54,6 +55,7 @@ class DataServer():
             raise
 
     async def start_listen_to_data(self):
+        # manage the continues data collection from the canbus and update the device dictionary
         try:
             while True:
                 message = await self.canbus.receive_message()            
@@ -62,29 +64,29 @@ class DataServer():
         except Exception as err:
             logging.error("Unexpected %s, %s", err, type(err))
             raise
-        
-        
-
 
 class DataApi(DataServer):
-    def __init__(self) -> None:
+    def __init__(self, port=5000) -> None:
         super().__init__()
         self.app = Flask(__name__)
+        self.app_port = port
         
     def get_all_sensors(self):
+        # collects the device dictionary and returns it as JSON
         return jsonify(self.get_devices_dict())
     
     def add_url_rules(self):
-        
+        # add API rules 
         self.app.add_url_rule('/wheel/status', 'get_single_data', self.get_all_sensors)
 
     def run_app(self):
+        # run the flask application for listening to HTTP requests
         logging.info("starting api server")
         self.add_url_rules()
-        self.app.run(debug=False, port=5002)
+        self.app.run(debug=False, port=self.app_port)
 
     async def start_server(self):
-        
+        # runs the data server and the flask app on a different thread 
         try:
             task = asyncio.create_task(self.start_listen_to_data())
             app_thread = threading.Thread(target=self.run_app)

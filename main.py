@@ -7,7 +7,7 @@ import asyncio
 
 async def main():
     wheel_sensor.simulate_sensors()
-    data_server = DataApi()
+    data_server = DataApi(port=5000)
     try:
         await data_server.start_server()
     except (KeyboardInterrupt, asyncio.exceptions.CancelledError) as err:

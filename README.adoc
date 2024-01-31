@@ -25,7 +25,8 @@ data = [
 == APIs
 The application listens on port 5000
 for these APIs
-=== /wheel/status
+
+=== wheel/status
 Retrieves wheel sensors status
 
 ...
